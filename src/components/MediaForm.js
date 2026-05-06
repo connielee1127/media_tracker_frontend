@@ -1,11 +1,11 @@
 import { useState } from "react";
 
-function MediaForm( {initialData = {}, onSubmit, mode} ) {
-    const [title, setTitle] = useState(initialData.title || "");
-    const [media_type, setType] = useState(initialData.media_type || "");
-    const [rating, setRating] = useState(initialData.rating || "");
-    const [state, setState] = useState(initialData.state || "");
-    const [journal, setJournal] = useState(initialData.journal ||"");
+function MediaForm( {initialData = {}, onSubmit, mode, onCancel } ) {
+    const [title, setTitle] = useState(initialData.title ?? "");
+    const [mediaType, setType] = useState(initialData.media_type ?? "");
+    const [rating, setRating] = useState(initialData.rating ?? "");
+    const [state, setState] = useState(initialData.state ?? "");
+    const [journal, setJournal] = useState(initialData.journal ?? "");
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -14,14 +14,14 @@ function MediaForm( {initialData = {}, onSubmit, mode} ) {
 
         // create mode only
         if (mode === "create") {
-            if (!title || !media_type) {
+            if (!title.trim() || !mediaType.trim()) {
               alert("Title and media type are required");
               return;
             }
         }
 
         if (title !== "") body.title = title;
-        if (media_type !== "") body.media_type = media_type;
+        if (mediaType !== "") body.media_type = mediaType;
         if (rating !== "") body.rating = Number(rating);
         if (state !== "") body.state = state;
         if (journal !== "") body.journal = journal;
@@ -41,7 +41,7 @@ function MediaForm( {initialData = {}, onSubmit, mode} ) {
 
         <input
         placeholder="Media Type"
-        value={media_type}
+        value={mediaType}
         onChange={(e) => setType(e.target.value)}
         />
 
@@ -66,6 +66,12 @@ function MediaForm( {initialData = {}, onSubmit, mode} ) {
         <button type="submit">
             {mode === "create" ? "Add Media" : "Save Changes"}
         </button> 
+
+        {mode === "edit" && (
+          <button type="button" onClick={onCancel}>
+              Cancel
+          </button>
+          )}
       </form>
     );
 }

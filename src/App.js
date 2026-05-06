@@ -1,31 +1,67 @@
 import { useEffect, useState } from "react";
-import Login from "./components/Login"
-import CreateMedia from "./components/CreateMedia"
+import Login from "./components/Login";
+import MediaList from "./components/MediaList";
+import MediaForm from "./components/MediaForm";
+import authFetch from "./utils/authFetch";
 
-async function authFetch(url, options = {}, onLogout) {
-  const token = localStorage.getItem("token");
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...options.headers,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (response.status === 401) {
-    localStorage.removeItem("token");
-    onLogout(); 
-    return null;
-  }
-
-  return response;
-}
 
 function App() {
   const [media, setMedia] = useState([]);
   const [error, setError] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [message, setMessage] = useState("");
+  const [editingMedia, setEditingMedia] = useState(null);
+
+
+  const logout = () => {
+    localStorage.removeItem("token");
+    setIsLoggedIn(false);
+    setMedia([]);
+  };
+  
+  const handleDelete = async (id) => {
+    const response = await authFetch(
+      `https://media-tracker-5bc6.onrender.com/media/${id}`,
+      { method: "DELETE" },
+      logout
+    );
+  
+    if (!response) return;
+  
+    if (response.ok) {
+      setMedia(prev => prev.filter(item => item.id !== id));
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingMedia(item);
+  };
+
+  const handleUpdate = async (id, body) => {
+    const response = await authFetch(
+      `https://media-tracker-5bc6.onrender.com/media/${id}`,
+      {
+        method: "PUT", // or PATCH depending on backend
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+      logout
+    );
+
+    if (!response) return;
+
+    if (response.ok) {
+      const data = await response.json();
+
+      setMedia(prev =>
+        prev.map(item =>
+          item.id === id ? data.data.media : item
+        )
+      );
+
+      setEditingMedia(null); 
+    }
+  };
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -34,7 +70,7 @@ function App() {
       const response = await authFetch(
         "https://media-tracker-5bc6.onrender.com/media/",
         {},
-        () => setIsLoggedIn(false)
+        logout
       );
     
     if (!response) return; 
@@ -67,25 +103,54 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!message) return;
+  
+    const timer = setTimeout(() => {
+      setMessage("");
+    }, 3000); 
+  
+    return () => clearTimeout(timer);
+  }, [message]);
+
   return (
     <div> 
       <h1>Media Tracker</h1>
       {isLoggedIn ? (
       <>
-        <CreateMedia />
+        <MediaForm
+          mode="create"
+          onSubmit={async (body) => {
+            const response = await authFetch(
+              "https://media-tracker-5bc6.onrender.com/media/",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              },
+              logout
+            );
+
+            if (!response) return;
+
+            if (response.ok) {
+              const data = await response.json();
+              setMedia(prev => [...prev, data.data.media]);
+              setMessage("Media created!")
+            }
+          }}
+        />
 
         {error && <p>{error}</p>}
+        {message && <p>{message}</p>}
 
-        {media.map(item => (
-          <div key={item.id}>
-            <p><strong>Title:</strong> {item.title}</p>
-            <p><strong>Type:</strong> {item.media_type}</p>
-            <p><strong>Rating:</strong> {item.rating}</p>
-            <p><strong>State:</strong> {item.state}</p>
-            <p><strong>Journal:</strong> {item.journal}</p>
-            <hr /> 
-          </div>
-        ))}
+        {<MediaList 
+          media={media} 
+          onDelete={handleDelete} 
+          onEdit={handleEdit}
+          editingMedia={editingMedia}
+          onUpdate={handleUpdate}
+        />}
       </>
     ) : (
       <Login onLogin={() => setIsLoggedIn(true)} />
