@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
 import Login from "./components/Login";
 import MediaList from "./components/MediaList";
 import MediaForm from "./components/MediaForm";
 import authFetch from "./utils/authFetch";
+import FilterBar from "./components/FilterBar";
+import Register from "./components/Register"
 
 
 function App() {
@@ -11,12 +14,26 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [message, setMessage] = useState("");
   const [editingMedia, setEditingMedia] = useState(null);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("title");
+  const [page, setPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState("asc"); 
+  const [limit, setLimit] = useState(10);
+  const [showRegister, setShowRegister] = useState(false);
+  const [loginMessage, setLoginMessage] = useState("");
 
 
   const logout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
     setMedia([]);
+    setPage(1);
+
+    setEditingMedia(null);
+    setMessage("");
+
+    setSearch("");
+    setSortBy("title");
   };
   
   const handleDelete = async (id) => {
@@ -66,12 +83,10 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
+    const url = `https://media-tracker-5bc6.onrender.com/media/?title=${search}&sort_by=${sortBy}&sort_order=${sortOrder}&page=${page}&limit=${limit}`;
+
     const fetchMedia = async () => {
-      const response = await authFetch(
-        "https://media-tracker-5bc6.onrender.com/media/",
-        {},
-        logout
-      );
+      const response = await authFetch(url,{},logout);
     
     if (!response) return; 
 
@@ -94,12 +109,23 @@ function App() {
     }
     };
     fetchMedia();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, search, sortBy, sortOrder, page, limit]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
+    if (!token) return;
+
+    try {
+      const decoded = jwtDecode(token);
+
+      if (decoded.exp * 1000 < Date.now()) {
+        logout(); // token expired 
+      } else {
+        setIsLoggedIn(true); // token still valid
+      }
+    } catch (err) {
+      console.error("Invalid token");
+      logout(); // corrupted token 
     }
   }, []);
 
@@ -115,9 +141,25 @@ function App() {
 
   return (
     <div> 
+      <header style={{ display: "flex", justifyContent: "space-between" }}>
       <h1>Media Tracker</h1>
+
+      {isLoggedIn && (
+        <button onClick={() => {
+          if (window.confirm("Are you sure you want to logout?")) {
+            logout();
+          }
+        }}>
+          Logout
+        </button>
+      )}
+      </header>
       {isLoggedIn ? (
       <>
+        {error && <p>{error}</p>}
+        {message && <p>{message}</p>}
+
+
         <MediaForm
           mode="create"
           onSubmit={async (body) => {
@@ -140,9 +182,19 @@ function App() {
             }
           }}
         />
-
-        {error && <p>{error}</p>}
-        {message && <p>{message}</p>}
+  
+        <FilterBar
+          search={search}
+          setSearch={setSearch}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          sortOrder={sortOrder}
+          setSortOrder={setSortOrder}
+          page={page}
+          setPage={setPage}
+          limit={limit}
+          setLimit={setLimit}
+        />
 
         {<MediaList 
           media={media} 
@@ -153,7 +205,20 @@ function App() {
         />}
       </>
     ) : (
-      <Login onLogin={() => setIsLoggedIn(true)} />
+      <>
+      <Login 
+        onLogin={() => setIsLoggedIn(true)}
+        onShowRegister={() => setShowRegister(true)}
+        loginMessage={loginMessage}
+       />
+
+      {showRegister && (
+        <Register 
+          onClose={() => setShowRegister(false)} 
+          setLoginMessage={setLoginMessage}
+        />
+      )}  
+      </>
     )}
     </div>
   );

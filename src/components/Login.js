@@ -1,10 +1,14 @@
-import {useState} from "react";
+import { useEffect, useState } from "react";
 
 
-function Login({onLogin}) {
+function Login({ onLogin, onShowRegister, loginMessage }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
+
+    useEffect(() => {
+        setMessage("");
+      }, []);
 
     const handleSubmit = async(e) => {
         e.preventDefault();
@@ -28,6 +32,7 @@ function Login({onLogin}) {
                 setMessage("Invalid credentials");
             }
         } catch (error) {
+            console.log()
             console.error("Error logging in:", error);
             setMessage("Something went wrong");
         }
@@ -52,6 +57,11 @@ function Login({onLogin}) {
        <button type="submit">Login</button> 
 
        <p>{message}</p>
+       <p>{loginMessage}</p>
+
+       <button type="button" onClick={onShowRegister}>
+        Create new user
+       </button>
       </form>
     );
   }
