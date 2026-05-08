@@ -16,6 +16,8 @@ function App() {
   const [editingMedia, setEditingMedia] = useState(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("title");
+  const [mediaType, setMediaType] = useState("");
+  const [stateFilter, setStateFilter] = useState("");
   const [page, setPage] = useState(1);
   const [sortOrder, setSortOrder] = useState("asc"); 
   const [limit, setLimit] = useState(10);
@@ -83,7 +85,24 @@ function App() {
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    const url = `https://media-tracker-5bc6.onrender.com/media/?title=${search}&sort_by=${sortBy}&sort_order=${sortOrder}&page=${page}&limit=${limit}`;
+    const params = new URLSearchParams();
+
+    if (search) {
+      params.append("title", search);
+    }   
+    if (mediaType) {
+      params.append("media_type", mediaType);
+    }  
+    if (stateFilter) {
+      params.append("state", stateFilter);
+    }
+    
+    params.append("sort_by", sortBy);
+    params.append("sort_order", sortOrder);
+    params.append("page", page);
+    params.append("limit", limit);
+
+    const url = `https://media-tracker-5bc6.onrender.com/media/?${params.toString()}`;
 
     const fetchMedia = async () => {
       const response = await authFetch(url,{},logout);
@@ -109,7 +128,7 @@ function App() {
     }
     };
     fetchMedia();
-  }, [isLoggedIn, search, sortBy, sortOrder, page, limit]);
+  }, [isLoggedIn, search, mediaType, stateFilter, sortBy, sortOrder, page, limit]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -186,6 +205,10 @@ function App() {
         <FilterBar
           search={search}
           setSearch={setSearch}
+          mediaType={mediaType}
+          setMediaType={setMediaType}
+          stateFilter={stateFilter}
+          setStateFilter={setStateFilter}
           sortBy={sortBy}
           setSortBy={setSortBy}
           sortOrder={sortOrder}
