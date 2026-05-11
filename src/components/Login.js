@@ -26,7 +26,9 @@ function Login({ onLogin, onShowRegister, loginMessage }) {
 
             if (data.data.access_token) {
                 localStorage.setItem("token", data.data.access_token);
-                onLogin();
+                localStorage.setItem("user", JSON.stringify(data.data.user));
+                onLogin(data.data.user);
+                
                 setMessage("Login successful.");
             } else {
                 setMessage("Invalid credentials");

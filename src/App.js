@@ -11,7 +11,7 @@ import Register from "./components/Register"
 function App() {
   const [media, setMedia] = useState([]);
   const [error, setError] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
   const [message, setMessage] = useState("");
   const [editingMedia, setEditingMedia] = useState(null);
   const [search, setSearch] = useState("");
@@ -27,7 +27,8 @@ function App() {
 
   const logout = () => {
     localStorage.removeItem("token");
-    setIsLoggedIn(false);
+    localStorage.removeItem("user")
+    setUser(null);
     setMedia([]);
     setPage(1);
 
@@ -83,7 +84,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!user) return;
 
     const params = new URLSearchParams();
 
@@ -128,23 +129,24 @@ function App() {
     }
     };
     fetchMedia();
-  }, [isLoggedIn, search, mediaType, stateFilter, sortBy, sortOrder, page, limit]);
+  }, [user, search, mediaType, stateFilter, sortBy, sortOrder, page, limit]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) return;
+    const currentUser = localStorage.getItem("user");
+    if (!token || currentUser) return;
 
     try {
       const decoded = jwtDecode(token);
 
-      if (decoded.exp * 1000 < Date.now()) {
-        logout(); // token expired 
+      if (decoded.exp * 1000 > Date.now()) {
+        setUser(JSON.parse(currentUser));
       } else {
-        setIsLoggedIn(true); // token still valid
+        logout(); 
       }
     } catch (err) {
       console.error("Invalid token");
-      logout(); // corrupted token 
+      logout(); 
     }
   }, []);
 
@@ -163,7 +165,10 @@ function App() {
       <header style={{ display: "flex", justifyContent: "space-between" }}>
       <h1>Media Tracker</h1>
 
-      {isLoggedIn && (
+      {user && (
+        <div>
+        <span>Welcome, {user.username} </span>
+
         <button onClick={() => {
           if (window.confirm("Are you sure you want to logout?")) {
             logout();
@@ -171,9 +176,10 @@ function App() {
         }}>
           Logout
         </button>
+        </div>
       )}
       </header>
-      {isLoggedIn ? (
+      {user ? (
       <>
         {error && <p>{error}</p>}
         {message && <p>{message}</p>}
@@ -230,7 +236,9 @@ function App() {
     ) : (
       <>
       <Login 
-        onLogin={() => setIsLoggedIn(true)}
+        onLogin={(userData) => {
+          setUser(userData);
+        }}
         onShowRegister={() => setShowRegister(true)}
         loginMessage={loginMessage}
        />
