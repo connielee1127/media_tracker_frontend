@@ -1,4 +1,5 @@
 import {useState, useEffect} from "react";
+import { API } from "../api";
 
 function Register({ onClose, setLoginMessage, setStatus }) {
     const [username, setUsername] = useState("");
@@ -15,7 +16,7 @@ function Register({ onClose, setLoginMessage, setStatus }) {
         try {
             setStatus(null);
 
-            const response = await fetch("https://media-tracker-5bc6.onrender.com/users/register", {
+            const response = await fetch(`${API.BASE_URL.media}/register`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json"

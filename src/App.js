@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
+import { API } from "./api";
 import Login from "./components/Login";
 import MediaList from "./components/MediaList";
 import MediaForm from "./components/MediaForm";
@@ -40,12 +41,14 @@ function App() {
     setUser(null);
     setMedia([]);
     setPage(1);
+    setLimit(10);
     setPagination(null);
 
     setEditingMedia(null);
 
     setSearch("");
     setSortBy("title");
+    setSortOrder("asc");
   };
   
   // Delete media entry
@@ -54,7 +57,7 @@ function App() {
       setStatus(null);
 
       const response = await authFetch(
-        `https://media-tracker-5bc6.onrender.com/media/${id}`,
+        `${API.BASE_URL.media}/${id}`,
         { method: "DELETE" },
         logout
       );
@@ -106,7 +109,7 @@ function App() {
       setStatus(null);
 
       const response = await authFetch(
-        `https://media-tracker-5bc6.onrender.com/media/${id}`,
+        `${API.BASE_URL.media}/${id}`,
         {
           method: "PUT", // or PATCH depending on backend
           headers: { "Content-Type": "application/json" },
@@ -180,7 +183,7 @@ function App() {
     params.append("page", page);
     params.append("limit", limit);
 
-    const url = `https://media-tracker-5bc6.onrender.com/media/?${params.toString()}`;
+    const url = `${API.BASE_URL.media}/?${params.toString()}`;
 
     const fetchMedia = async () => {
     try {
@@ -293,7 +296,7 @@ function App() {
             try {
               setStatus(null);
               const response = await authFetch(
-                "https://media-tracker-5bc6.onrender.com/media/",
+                `${API.BASE_URL.media}/`,
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../api";
 
 
 function Login({ onLogin, onShowRegister, loginMessage, setStatus }) {
@@ -18,7 +19,7 @@ function Login({ onLogin, onShowRegister, loginMessage, setStatus }) {
             setLoading(true);
             setStatus(null);
 
-            const response = await fetch("https://media-tracker-5bc6.onrender.com/users/login", {
+            const response = await fetch(`${API.BASE_URL.auth}/login`, {
                 method: "POST", 
                 headers: {
                     "Content-Type": "application/json"
