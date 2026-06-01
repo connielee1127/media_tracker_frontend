@@ -12,9 +12,9 @@ async function authFetch(url, options = {}, onLogout) {
     if (response.status === 401) {
       localStorage.removeItem("token");
       onLogout(); 
-      return null;
+
+      throw new Error("SESSION_EXPIRED");
     }
-  
     return response;
   }
 

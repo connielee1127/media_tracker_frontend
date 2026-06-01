@@ -1,37 +1,63 @@
-import {useState} from "react";
+import {useState, useEffect} from "react";
 
-function Register({ onClose, setLoginMessage }) {
+function Register({ onClose, setLoginMessage, setStatus }) {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [message, setMessage] = useState("");
 
+    useEffect(() => {
+            setStatus(null);
+          }, [setStatus]);
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
-      
-        const response = await fetch("https://media-tracker-5bc6.onrender.com/users/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            username,
-            email,
-            password
-          })
-        });
-      
-        const data = await response.json();
-      
-        if (response.ok) {
-          setLoginMessage("Account created! Please log in.");
-          setUsername("");
-          setEmail("");
-          setPassword("");
 
-          onClose(); 
-        } else {
-          setMessage(data.error || "Failed to register.");
+        try {
+            setStatus(null);
+
+            const response = await fetch("https://media-tracker-5bc6.onrender.com/users/register", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                  username,
+                  email,
+                  password
+                })
+            });
+
+            if (!response) {
+                setStatus({ type: "error", text: "Network error" });
+                return;
+            }
+
+            const data = await response.json();
+            console.log(data)
+
+            if (!response.ok) {
+                setStatus({
+                  type: "error",
+                  text: data.error || "Invalid input"
+                });
+                return;
+            }
+      
+            if (response.ok) {
+                setLoginMessage("Account created! Please log in.");
+                setUsername("");
+                setEmail("");
+                setPassword("");
+        
+                onClose(); 
+                setStatus({
+                    type: "success",
+                    text: ""
+                  });
+            }
+        } catch (error) {
+            console.error("Error logging in:", error);
+            setStatus({ type: "error", text: "Something went wrong." })
         }
     };
 
@@ -62,8 +88,6 @@ function Register({ onClose, setLoginMessage }) {
 
         <button type="submit">Register</button>
       </form>
-
-      <p>{message}</p>
 
         <button onClick={onClose}>Close</button>
       </div>

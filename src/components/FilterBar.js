@@ -13,9 +13,9 @@ function FilterBar({
     setSortOrder,
     page,
     setPage,
+    pagination, 
     limit,
     setLimit,
-    onApplyFilters
   }) {
     return (
       <div>
@@ -94,19 +94,16 @@ function FilterBar({
             onChange={(e) => setLimit(Number(e.target.value))}
             />
   
-        {/* APPLY BUTTON */}
-        <button onClick={onApplyFilters}>
-          Apply
-        </button>
-  
         {/* PAGINATION */}
-        <button onClick={() => setPage(p => Math.max(p - 1, 1))}>
+        <button onClick={() => setPage(pagination.prev_page)} 
+          disabled={!pagination?.has_prev}>
           Prev
         </button>
   
         <span> Page {page} </span>
   
-        <button onClick={() => setPage(p => p + 1)}>
+        <button onClick={() => setPage(pagination.next_page)} 
+          disabled={!pagination?.has_next}>
           Next
         </button>
   

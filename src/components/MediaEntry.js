@@ -27,7 +27,7 @@ function MediaEntry({ item, onDelete, onEdit, editingMedia, onUpdate }) {
 
             <hr /> 
           </>
-        )};
+        )}
       </div>
     );
 }

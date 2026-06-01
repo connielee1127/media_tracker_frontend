@@ -10,79 +10,156 @@ import Register from "./components/Register"
 
 function App() {
   const [media, setMedia] = useState([]);
-  const [error, setError] = useState(null);
+  const [status, setStatus] = useState(null);
   const [user, setUser] = useState(null);
-  const [message, setMessage] = useState("");
   const [editingMedia, setEditingMedia] = useState(null);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("title");
   const [mediaType, setMediaType] = useState("");
   const [stateFilter, setStateFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc"); 
   const [limit, setLimit] = useState(10);
   const [showRegister, setShowRegister] = useState(false);
   const [loginMessage, setLoginMessage] = useState("");
 
+  
+  const getStatusText = (status) => {
+    if (!status) return "";
+  
+    return status.type === "error"
+      ? `Error: ${status.text}`
+      : status.text;
+  };
 
+  // logout of current user session
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user")
     setUser(null);
     setMedia([]);
     setPage(1);
+    setPagination(null);
 
     setEditingMedia(null);
-    setMessage("");
 
     setSearch("");
     setSortBy("title");
   };
   
+  // Delete media entry
   const handleDelete = async (id) => {
-    const response = await authFetch(
-      `https://media-tracker-5bc6.onrender.com/media/${id}`,
-      { method: "DELETE" },
-      logout
-    );
-  
-    if (!response) return;
-  
-    if (response.ok) {
-      setMedia(prev => prev.filter(item => item.id !== id));
+    try {
+      setStatus(null);
+
+      const response = await authFetch(
+        `https://media-tracker-5bc6.onrender.com/media/${id}`,
+        { method: "DELETE" },
+        logout
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStatus({
+          type: "error",
+          text: data.error || "Failed to delete"
+        });
+        return;
+      }
+
+      if (response.ok) {
+        setMedia(prev => prev.filter(item => item.id !== id));
+        setStatus({ 
+          type: "success", 
+          text: data.message || "Deleted successfully" 
+        });
+      }
+       
+    } catch (err) {
+      if (err.message === "SESSION_EXPIRED") {
+        setStatus({
+          type: "error",
+          text: "Your session has expired. Please log in again."
+        });
+    
+        return;
+      }
+      console.error(err);
+      setStatus({
+        type: "error",
+        text: "Something went wrong"
+      });
     }
+
   };
 
   const handleEdit = (item) => {
     setEditingMedia(item);
   };
 
+
+// Update media entry
   const handleUpdate = async (id, body) => {
-    const response = await authFetch(
-      `https://media-tracker-5bc6.onrender.com/media/${id}`,
-      {
-        method: "PUT", // or PATCH depending on backend
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-      logout
-    );
+    try {
+      setStatus(null);
 
-    if (!response) return;
-
-    if (response.ok) {
-      const data = await response.json();
-
-      setMedia(prev =>
-        prev.map(item =>
-          item.id === id ? data.data.media : item
-        )
+      const response = await authFetch(
+        `https://media-tracker-5bc6.onrender.com/media/${id}`,
+        {
+          method: "PUT", // or PATCH depending on backend
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        logout
       );
 
-      setEditingMedia(null); 
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStatus({
+          type: "error",
+          text: data.error || "Failed to update"
+        });
+        return;
+      }
+
+      if (response.ok) {
+
+        setMedia(prev =>
+          prev.map(item =>
+            item.id === id ? data.data.media : item
+          )
+        );
+        
+        setStatus({
+          type: "success", 
+          text: data.message || "Edited succesffully" 
+        })
+  
+        setEditingMedia(null); 
+      }
+
+    } catch (err) {
+      if (err.message === "SESSION_EXPIRED") {
+        setStatus({
+          type: "error",
+          text: "Your session has expired. Please log in again."
+        });
+    
+        return;
+      }
+      console.error(err);
+      setStatus({
+        type: "error",
+        text: "Something went wrong"
+      });
     }
   };
 
+
+// Get all media entries
   useEffect(() => {
     if (!user) return;
 
@@ -106,11 +183,8 @@ function App() {
     const url = `https://media-tracker-5bc6.onrender.com/media/?${params.toString()}`;
 
     const fetchMedia = async () => {
-      const response = await authFetch(url,{},logout);
-    
-    if (!response) return; 
-
     try {
+      const response = await authFetch(url,{},logout);
       const data = await response.json();
 
       const mediaData = data?.data?.media;
@@ -123,42 +197,71 @@ function App() {
       }
 
       setMedia(mediaArray);
+      setPagination(data.data.pagination);
     } catch (err) {
+      if (err.message === "SESSION_EXPIRED") {
+        setStatus({
+          type: "error",
+          text: "Your session has expired. Please log in again."
+        });
+    
+        return;
+      }
       console.error(err);
-      setError("Failed to fetch data");
+
+      setStatus({
+        type: "error",
+        text: "Something went wrong"
+      });
     }
     };
     fetchMedia();
   }, [user, search, mediaType, stateFilter, sortBy, sortOrder, page, limit]);
 
+  // User authentication - validate current session's token
   useEffect(() => {
     const token = localStorage.getItem("token");
     const currentUser = localStorage.getItem("user");
-    if (!token || currentUser) return;
+
+    if (!token || !currentUser) return;
 
     try {
       const decoded = jwtDecode(token);
 
       if (decoded.exp * 1000 > Date.now()) {
         setUser(JSON.parse(currentUser));
+
       } else {
         logout(); 
+
+        setStatus({
+          type: "error",
+          text: "Your session has expired. Please log in again."
+        });
       }
     } catch (err) {
       console.error("Invalid token");
       logout(); 
+
+      setStatus({
+        type: "error",
+        text: "Session error. Please log in again."
+      });
     }
   }, []);
 
+  // Clear status message after a while 
   useEffect(() => {
-    if (!message) return;
+    if (!status) return;
+
+    const timeout = status.type === "error" ? 5000 : 3000;
   
     const timer = setTimeout(() => {
-      setMessage("");
-    }, 3000); 
+      setStatus(null);
+    }, timeout); 
   
     return () => clearTimeout(timer);
-  }, [message]);
+  }, [status]);
 
   return (
     <div> 
@@ -179,31 +282,58 @@ function App() {
         </div>
       )}
       </header>
+
+      {status && <p className={status.type}>{getStatusText(status)}</p>}
+
       {user ? (
       <>
-        {error && <p>{error}</p>}
-        {message && <p>{message}</p>}
-
-
         <MediaForm
           mode="create"
           onSubmit={async (body) => {
-            const response = await authFetch(
-              "https://media-tracker-5bc6.onrender.com/media/",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body),
-              },
-              logout
-            );
-
-            if (!response) return;
-
-            if (response.ok) {
+            try {
+              setStatus(null);
+              const response = await authFetch(
+                "https://media-tracker-5bc6.onrender.com/media/",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(body),
+                },
+                logout
+              );
+          
               const data = await response.json();
-              setMedia(prev => [...prev, data.data.media]);
-              setMessage("Media created!")
+          
+              if (!response.ok) {
+                setStatus({
+                  type: "error",
+                  text: data.error || "Failed to create media"
+                });
+                return;
+              }
+
+              if (response.ok) {
+                setMedia(prev => [...prev, data.data.media]);
+                setStatus({
+                  type: "success",
+                  text: data.message || "Successfully created media"
+                });
+              }
+            } catch (err) {
+              if (err.message === "SESSION_EXPIRED") {
+                setStatus({
+                  type: "error",
+                  text: "Your session has expired. Please log in again."
+                });
+            
+                return;
+              }
+              console.error(err);
+
+              setStatus({
+                type: "error",
+                text: "Something went wrong while creating media"
+              });
             }
           }}
         />
@@ -221,6 +351,7 @@ function App() {
           setSortOrder={setSortOrder}
           page={page}
           setPage={setPage}
+          pagination={pagination}
           limit={limit}
           setLimit={setLimit}
         />
@@ -241,12 +372,14 @@ function App() {
         }}
         onShowRegister={() => setShowRegister(true)}
         loginMessage={loginMessage}
+        setStatus={setStatus}
        />
 
       {showRegister && (
         <Register 
           onClose={() => setShowRegister(false)} 
           setLoginMessage={setLoginMessage}
+          setStatus={setStatus}
         />
       )}  
       </>
