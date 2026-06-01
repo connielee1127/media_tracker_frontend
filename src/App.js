@@ -57,7 +57,7 @@ function App() {
       setStatus(null);
 
       const response = await authFetch(
-        `${API.BASE_URL.media}/${id}`,
+        `${API.media}/${id}`,
         { method: "DELETE" },
         logout
       );
@@ -109,7 +109,7 @@ function App() {
       setStatus(null);
 
       const response = await authFetch(
-        `${API.BASE_URL.media}/${id}`,
+        `${API.media}/${id}`,
         {
           method: "PUT", // or PATCH depending on backend
           headers: { "Content-Type": "application/json" },
@@ -183,7 +183,7 @@ function App() {
     params.append("page", page);
     params.append("limit", limit);
 
-    const url = `${API.BASE_URL.media}/?${params.toString()}`;
+    const url = `${API.media}/?${params.toString()}`;
 
     const fetchMedia = async () => {
     try {
@@ -296,7 +296,7 @@ function App() {
             try {
               setStatus(null);
               const response = await authFetch(
-                `${API.BASE_URL.media}/`,
+                `${API.media}/`,
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },

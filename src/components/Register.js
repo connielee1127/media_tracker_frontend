@@ -16,7 +16,7 @@ function Register({ onClose, setLoginMessage, setStatus }) {
         try {
             setStatus(null);
 
-            const response = await fetch(`${API.BASE_URL.media}/register`, {
+            const response = await fetch(`${API.media}/register`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json"

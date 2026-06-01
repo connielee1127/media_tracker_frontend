@@ -19,7 +19,7 @@ function Login({ onLogin, onShowRegister, loginMessage, setStatus }) {
             setLoading(true);
             setStatus(null);
 
-            const response = await fetch(`${API.BASE_URL.auth}/login`, {
+            const response = await fetch(`${API.auth}/login`, {
                 method: "POST", 
                 headers: {
                     "Content-Type": "application/json"
