@@ -2,6 +2,10 @@
 
 Frontend for my Media Tracker application.
 
+## Live Demo
+
+[Access Demo](https://media-tracker-frontend-topaz.vercel.app/)
+
 ## Features
 
 - User registration and login
