@@ -46,4 +46,5 @@ Frontend deployed on Vercel.
 - Addition of more informative fields, such as author/director, exact date watch
 - Addition of the TV/Drama media category
 - Inclusion of visual images correspondent to respective entries
+- Extensive testing suite 
   
