@@ -24,7 +24,7 @@ Frontend for my Media Tracker application.
 
 This frontend communicates with the Media Tracker API:
 
-[(https://github.com/connielee1127/media_tracker)]
+[https://github.com/connielee1127/media_tracker]
 
 ## Running Locally
 
